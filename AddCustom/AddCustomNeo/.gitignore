@@ -1,0 +1,5 @@
+build/
+input/
+out/
+output/
+ascendc_kernels*
