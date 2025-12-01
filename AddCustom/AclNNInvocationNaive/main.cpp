@@ -8,11 +8,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
-#include <vector>
-#include <chrono>
 #include <random>
+#include <vector>
 
 #include "acl/acl.h"
 #include "aclnn_add_custom.h"
@@ -32,8 +32,7 @@
         printf(message, ##__VA_ARGS__); \
     } while (0)
 
-int64_t GetShapeSize(const std::vector<int64_t> &shape)
-{
+int64_t GetShapeSize(const std::vector<int64_t>& shape) {
     int64_t shapeSize = 1;
     for (auto i : shape) {
         shapeSize *= i;
@@ -41,8 +40,7 @@ int64_t GetShapeSize(const std::vector<int64_t> &shape)
     return shapeSize;
 }
 
-int Init(int32_t deviceId, aclrtStream *stream)
-{
+int Init(int32_t deviceId, aclrtStream* stream) {
     // Fixed code, acl initialization
     auto ret = aclInit(nullptr);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return FAILED);
@@ -55,9 +53,8 @@ int Init(int32_t deviceId, aclrtStream *stream)
 }
 
 template <typename T>
-int CreateAclTensor(const std::vector<T> &hostData, const std::vector<int64_t> &shape, void **deviceAddr,
-                    aclDataType dataType, aclTensor **tensor)
-{
+int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
+                    aclDataType dataType, aclTensor** tensor) {
     auto size = GetShapeSize(shape) * sizeof(T);
     // Call aclrtMalloc to allocate device memory
     auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -73,13 +70,12 @@ int CreateAclTensor(const std::vector<T> &hostData, const std::vector<int64_t> &
     return SUCCESS;
 }
 
-void DestroyResources(std::vector<void *> tensors, std::vector<void *> deviceAddrs, aclrtStream stream,
-                      int32_t deviceId, void *workspaceAddr = nullptr)
-{
+void DestroyResources(std::vector<void*> tensors, std::vector<void*> deviceAddrs, aclrtStream stream, int32_t deviceId,
+                      void* workspaceAddr = nullptr) {
     // Release aclTensor and device
     for (uint32_t i = 0; i < tensors.size(); i++) {
         if (tensors[i] != nullptr) {
-            aclDestroyTensor(reinterpret_cast<aclTensor *>(tensors[i]));
+            aclDestroyTensor(reinterpret_cast<aclTensor*>(tensors[i]));
         }
         if (deviceAddrs[i] != nullptr) {
             aclrtFree(deviceAddrs[i]);
@@ -95,13 +91,12 @@ void DestroyResources(std::vector<void *> tensors, std::vector<void *> deviceAdd
 }
 
 template <typename T>
-void GenerateRandomHostData(std::vector<T> &hostData, float minVal = 0.0f, float maxVal = 10.0f)
-{
+void GenerateRandomHostData(std::vector<T>& hostData, float minVal = 0.0f, float maxVal = 10.0f) {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
     std::uniform_real_distribution<float> distribution(minVal, maxVal);  // 均匀分布在 [minVal, maxVal) 之间
 
-    for (auto &data : hostData) {
+    for (auto& data : hostData) {
         float randomFloat = distribution(generator);
         if constexpr (std::is_same<T, aclFloat16>::value) {
             data = aclFloatToFloat16(randomFloat);
@@ -112,8 +107,7 @@ void GenerateRandomHostData(std::vector<T> &hostData, float minVal = 0.0f, float
     }
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     // 1. (Fixed code) Initialize device / stream, refer to the list of external interfaces of acl
     // Update deviceId to your own device id
     int32_t deviceId = 0;
@@ -125,12 +119,12 @@ int main(int argc, char **argv)
     std::vector<int64_t> inputXShape = {8, 2048};
     std::vector<int64_t> inputYShape = {8, 2048};
     std::vector<int64_t> outputZShape = {8, 2048};
-    void *inputXDeviceAddr = nullptr;
-    void *inputYDeviceAddr = nullptr;
-    void *outputZDeviceAddr = nullptr;
-    aclTensor *inputX = nullptr;
-    aclTensor *inputY = nullptr;
-    aclTensor *outputZ = nullptr;
+    void* inputXDeviceAddr = nullptr;
+    void* inputYDeviceAddr = nullptr;
+    void* outputZDeviceAddr = nullptr;
+    aclTensor* inputX = nullptr;
+    aclTensor* inputY = nullptr;
+    aclTensor* outputZ = nullptr;
 
     std::vector<aclFloat16> inputXHostData(inputXShape[0] * inputXShape[1]);
     std::vector<aclFloat16> inputYHostData(inputYShape[0] * inputYShape[1]);
@@ -144,8 +138,8 @@ int main(int argc, char **argv)
     //     inputYHostData[i] = aclFloatToFloat16(2.0);
     //     outputZHostData[i] = aclFloatToFloat16(0.0);
     // }
-    std::vector<void *> tensors = {inputX, inputY, outputZ};
-    std::vector<void *> deviceAddrs = {inputXDeviceAddr, inputYDeviceAddr, outputZDeviceAddr};
+    std::vector<void*> tensors = {inputX, inputY, outputZ};
+    std::vector<void*> deviceAddrs = {inputXDeviceAddr, inputYDeviceAddr, outputZDeviceAddr};
     // Create inputX aclTensor
     ret = CreateAclTensor(inputXHostData, inputXShape, &inputXDeviceAddr, aclDataType::ACL_FLOAT16, &inputX);
     CHECK_RET(ret == ACL_SUCCESS, DestroyResources(tensors, deviceAddrs, stream, deviceId); return FAILED);
@@ -158,13 +152,13 @@ int main(int argc, char **argv)
 
     // 3. Call the API of the custom operator library
     uint64_t workspaceSize = 0;
-    aclOpExecutor *executor;
+    aclOpExecutor* executor;
     // Calculate the workspace size and allocate memory for it
     ret = aclnnAddCustomGetWorkspaceSize(inputX, inputY, outputZ, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddCustomGetWorkspaceSize failed. ERROR: %d\n", ret);
               DestroyResources(tensors, deviceAddrs, stream, deviceId); return FAILED);
 
-    void *workspaceAddr = nullptr;
+    void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret);

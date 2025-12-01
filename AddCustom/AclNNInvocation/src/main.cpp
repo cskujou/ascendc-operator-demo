@@ -21,8 +21,7 @@
 bool g_isDevice = false;
 int deviceId = 0;
 
-OperatorDesc CreateOpDesc()
-{
+OperatorDesc CreateOpDesc() {
     // define operator
     std::vector<int64_t> shape{8, 2048};
     aclDataType dataType = ACL_FLOAT16;
@@ -34,8 +33,7 @@ OperatorDesc CreateOpDesc()
     return opDesc;
 }
 
-bool SetInputData(OpRunner &runner)
-{
+bool SetInputData(OpRunner& runner) {
     size_t fileSize = 0;
     ReadFile("../input/input_x.bin", fileSize, runner.GetInputBuffer<void>(0), runner.GetInputSize(0));
     ReadFile("../input/input_y.bin", fileSize, runner.GetInputBuffer<void>(1), runner.GetInputSize(1));
@@ -43,15 +41,13 @@ bool SetInputData(OpRunner &runner)
     return true;
 }
 
-bool ProcessOutputData(OpRunner &runner)
-{
+bool ProcessOutputData(OpRunner& runner) {
     WriteFile("../output/output_z.bin", runner.GetOutputBuffer<void>(0), runner.GetOutputSize(0));
     INFO_LOG("Write output success");
     return true;
 }
 
-void DestroyResource()
-{
+void DestroyResource() {
     bool flag = false;
     if (aclrtResetDevice(deviceId) != ACL_SUCCESS) {
         ERROR_LOG("Reset device %d failed", deviceId);
@@ -69,8 +65,7 @@ void DestroyResource()
     }
 }
 
-bool InitResource()
-{
+bool InitResource() {
     std::string output = "../output";
     if (access(output.c_str(), 0) == -1) {
         int ret = mkdir(output.c_str(), 0700);
@@ -109,8 +104,7 @@ bool InitResource()
     return true;
 }
 
-bool RunOp()
-{
+bool RunOp() {
     // create op desc
     OperatorDesc opDesc = CreateOpDesc();
 
@@ -143,8 +137,7 @@ bool RunOp()
     return true;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     if (!InitResource()) {
         ERROR_LOG("Init resource failed");
         return FAILED;
