@@ -1,0 +1,5 @@
+input/*
+output/*
+/out
+ascendc_kernels_bbit
+build/
