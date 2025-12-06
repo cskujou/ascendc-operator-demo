@@ -11,7 +11,7 @@ SHORT=r:,v:,i:,b:,p:,
 LONG=run-mode:,soc-version:,install-path:,build-type:,install-prefix:,
 OPTS=$(getopt -a --options $SHORT --longoptions $LONG -- "$@")
 eval set -- "$OPTS"
-SOC_VERSION="Ascend310P3"
+SOC_VERSION="Ascend310B1"
 
 while :; do
     case "$1" in
@@ -52,7 +52,7 @@ if [[ " $RUN_MODE_LIST " != *" $RUN_MODE "* ]]; then
     exit -1
 fi
 
-VERSION_LIST="Ascend310P1 Ascend310P3 Ascend910B1 Ascend910B2 Ascend910B3 Ascend910B4"
+VERSION_LIST="Ascend310P1 Ascend310P3 Ascend910B1 Ascend910B2 Ascend910B3 Ascend910B4 Ascend310B1"
 if [[ " $VERSION_LIST " != *" $SOC_VERSION "* ]]; then
     echo "[ERROR]: SOC_VERSION should be in [$VERSION_LIST]"
     exit -1

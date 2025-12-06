@@ -42,7 +42,6 @@ void GenerateTiling(const char* socVersion, uint8_t* tilingBuf) {
     auto ascendcPlatform = platform_ascendc::PlatformAscendCManager::GetInstance(socVersion);
     MultiCoreMatmulTiling tilingApi(*ascendcPlatform);
 
-    printf("ascendcPlatform->GetCoreNumAiv() = %u\n", ascendcPlatform->GetCoreNumAiv());
     tilingApi.SetDim(
         ascendcPlatform->GetCoreNumAiv());
     tilingApi.SetAType(leftPosition, leftFormat, leftDtype, isTransA);
